@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TaskFlow — Task Management App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0d0f;--bg2:#17171a;--bg3:#1f1f23;--bg4:#2a2a30;
+  --border:#2e2e36;--border2:#3d3d48;
+  --text:#f0f0f4;--text2:#9898a8;--text3:#5a5a6a;
+  --accent:#7c6af7;--accent2:#a594ff;--accent-bg:rgba(124,106,247,0.12);
+  --green:#3ecf8e;--green-bg:rgba(62,207,142,0.1);
+  --amber:#f5a623;--amber-bg:rgba(245,166,35,0.1);
+  --red:#f06565;--red-bg:rgba(240,101,101,0.1);
+  --blue:#4db8ff;--blue-bg:rgba(77,184,255,0.1);
+  --font:'Syne',sans-serif;--mono:'DM Mono',monospace;
+  --r:10px;--r2:14px;--r3:20px;
+}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--text);overflow-x:hidden}
+
+/* AUTH */
+#auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem;flex-direction:column;gap:2rem;position:relative}
+.auth-bg{position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 0%,rgba(124,106,247,0.15) 0%,transparent 70%);pointer-events:none}
+.auth-logo{display:flex;align-items:center;gap:10px;position:relative;z-index:1}
+.auth-logo-icon{width:40px;height:40px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center}
+.auth-logo-icon svg{width:22px;height:22px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.auth-logo-text{font-size:22px;font-weight:700;letter-spacing:-0.5px}
+.auth-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r3);padding:2rem;width:100%;max-width:400px;position:relative;z-index:1}
+.auth-tabs{display:flex;background:var(--bg3);border-radius:var(--r);padding:4px;margin-bottom:1.5rem}
+.auth-tab{flex:1;padding:8px;text-align:center;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;color:var(--text2);transition:all .2s;border:none;background:none;font-family:var(--font)}
+.auth-tab.active{background:var(--accent);color:#fff}
+.field-group{margin-bottom:1rem}
+.field-label{font-size:12px;color:var(--text2);margin-bottom:6px;display:block;font-weight:500;letter-spacing:0.3px}
+.field-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;transition:border-color .2s}
+.field-input:focus{border-color:var(--accent)}
+.field-input::placeholder{color:var(--text3)}
+.btn-primary{width:100%;background:var(--accent);color:#fff;border:none;border-radius:var(--r);padding:12px;font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-primary:hover{background:var(--accent2)}
+.btn-primary:active{transform:scale(0.98)}
+.auth-divider{text-align:center;font-size:12px;color:var(--text3);margin:1rem 0;position:relative}
+.auth-divider::before,.auth-divider::after{content:'';position:absolute;top:50%;width:40%;height:1px;background:var(--border)}
+.auth-divider::before{left:0}.auth-divider::after{right:0}
+.demo-users{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:1rem}
+.demo-user{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:10px;cursor:pointer;transition:all .2s;text-align:left}
+.demo-user:hover{border-color:var(--accent);background:var(--accent-bg)}
+.demo-user-name{font-size:13px;font-weight:600}
+.demo-user-role{font-size:11px;color:var(--text2);margin-top:2px}
+.auth-error{background:var(--red-bg);border:1px solid rgba(240,101,101,0.25);border-radius:var(--r);padding:10px 14px;font-size:13px;color:var(--red);margin-bottom:1rem;display:none}
+
+/* APP */
+#app-screen{display:none;flex-direction:column;height:100vh}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 1.5rem;height:56px;display:flex;align-items:center;gap:1rem;flex-shrink:0}
+.topbar-logo{display:flex;align-items:center;gap:8px;margin-right:auto}
+.topbar-logo-icon{width:28px;height:28px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center}
+.topbar-logo-icon svg{width:15px;height:15px;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.topbar-logo-text{font-size:16px;font-weight:700;letter-spacing:-0.3px}
+.topbar-user{display:flex;align-items:center;gap:8px}
+.user-avatar{width:30px;height:30px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.user-name{font-size:13px;font-weight:500;color:var(--text2)}
+.topbar-btn{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 14px;color:var(--text2);font-family:var(--font);font-size:13px;cursor:pointer;transition:all .2s;font-weight:500}
+.topbar-btn:hover{border-color:var(--border2);color:var(--text)}
+.live-dot{width:7px;height:7px;background:var(--green);border-radius:50%;animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.live-label{font-size:12px;color:var(--green);font-family:var(--mono);font-weight:500}
+.app-body{display:flex;flex:1;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{width:220px;background:var(--bg2);border-right:1px solid var(--border);padding:1rem;display:flex;flex-direction:column;gap:6px;flex-shrink:0;overflow-y:auto}
+.sidebar-section{font-size:10px;font-weight:600;letter-spacing:1px;color:var(--text3);padding:0 8px;margin:8px 0 4px;text-transform:uppercase}
+.sidebar-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;transition:all .18s;border:none;background:none;width:100%;text-align:left;font-family:var(--font);font-size:13px;color:var(--text2);font-weight:500}
+.sidebar-item:hover{background:var(--bg3);color:var(--text)}
+.sidebar-item.active{background:var(--accent-bg);color:var(--accent2)}
+.sidebar-item svg{width:15px;height:15px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.sidebar-badge{margin-left:auto;background:var(--bg4);border-radius:20px;padding:1px 7px;font-size:11px;font-family:var(--mono);color:var(--text3)}
+.sidebar-item.active .sidebar-badge{background:var(--accent);color:#fff}
+
+/* MAIN */
+.main{flex:1;overflow-y:auto;padding:1.5rem;display:flex;flex-direction:column;gap:1.25rem;min-width:0}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:1rem 1.1rem}
+.stat-label{font-size:11px;color:var(--text3);font-weight:600;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:8px}
+.stat-value{font-size:28px;font-weight:700;font-family:var(--mono);letter-spacing:-1px}
+.stat-sub{font-size:12px;color:var(--text3);margin-top:4px}
+.stat-card.accent .stat-value{color:var(--accent2)}
+.stat-card.green .stat-value{color:var(--green)}
+.stat-card.amber .stat-value{color:var(--amber)}
+.stat-card.red .stat-value{color:var(--red)}
+.progress-bar{height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;margin-top:8px}
+.progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s ease}
+
+/* TOOLBAR */
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.toolbar-left{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+.search-wrap{position:relative;display:flex;align-items:center}
+.search-wrap svg{position:absolute;left:10px;width:15px;height:15px;stroke:var(--text3);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+.search-input{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:8px 12px 8px 36px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;width:210px;transition:border-color .2s}
+.search-input:focus{border-color:var(--accent)}
+.search-input::placeholder{color:var(--text3)}
+.filter-btn{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:8px 12px;color:var(--text2);font-family:var(--font);font-size:13px;cursor:pointer;transition:all .18s;font-weight:500;white-space:nowrap}
+.filter-btn:hover,.filter-btn.active{border-color:var(--accent);color:var(--accent2);background:var(--accent-bg)}
+.view-toggle{display:flex;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:2px;gap:2px}
+.view-btn{width:30px;height:28px;border:none;background:none;cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--text3);transition:all .18s}
+.view-btn:hover{color:var(--text2)}
+.view-btn.active{background:var(--accent);color:#fff}
+.view-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.btn-add{background:var(--accent);color:#fff;border:none;border-radius:var(--r);padding:9px 16px;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;white-space:nowrap;flex-shrink:0}
+.btn-add:hover{background:var(--accent2)}
+.btn-add svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* TASK LIST */
+.task-list{display:flex;flex-direction:column;gap:6px}
+.task-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:14px 16px;display:flex;align-items:flex-start;gap:12px;transition:all .18s;animation:slideIn .25s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.task-card:hover{border-color:var(--border2);background:var(--bg3)}
+.task-check{width:18px;height:18px;border:1.5px solid var(--border2);border-radius:5px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:2px;transition:all .18s;background:none}
+.task-check:hover{border-color:var(--accent)}
+.task-check.done{background:var(--green);border-color:var(--green)}
+.task-check.done svg{display:block}
+.task-check svg{display:none;width:10px;height:10px;stroke:#fff;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.task-body{flex:1;min-width:0}
+.task-title-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px}
+.task-title{font-size:14px;font-weight:600;color:var(--text);line-height:1.4}
+.task-title.done{text-decoration:line-through;color:var(--text3)}
+.task-desc{font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.task-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;font-family:var(--mono)}
+.badge-priority-high{background:var(--red-bg);color:var(--red)}
+.badge-priority-medium{background:var(--amber-bg);color:var(--amber)}
+.badge-priority-low{background:var(--green-bg);color:var(--green)}
+.badge-status-todo{background:var(--bg4);color:var(--text2)}
+.badge-status-inprogress{background:var(--blue-bg);color:var(--blue)}
+.badge-status-done{background:var(--green-bg);color:var(--green)}
+.badge-tag{background:var(--accent-bg);color:var(--accent2)}
+.task-date{font-size:11px;color:var(--text3);display:flex;align-items:center;gap:4px;font-family:var(--mono)}
+.task-date svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.task-actions{display:flex;gap:4px;flex-shrink:0;opacity:0;transition:opacity .18s}
+.task-card:hover .task-actions{opacity:1}
+.icon-btn{width:28px;height:28px;border-radius:7px;border:1px solid var(--border);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .18s;color:var(--text2)}
+.icon-btn:hover{border-color:var(--border2);background:var(--bg3);color:var(--text)}
+.icon-btn.danger:hover{border-color:var(--red);color:var(--red)}
+.icon-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* KANBAN */
+.kanban-board{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-items:start}
+.kanban-col{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:12px;display:flex;flex-direction:column;gap:8px}
+.kanban-col-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.kanban-col-title{font-size:13px;font-weight:600;color:var(--text2)}
+.kanban-col-count{background:var(--bg4);border-radius:20px;padding:1px 8px;font-size:11px;font-family:var(--mono);color:var(--text3)}
+.kanban-task{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;cursor:pointer;transition:all .18s}
+.kanban-task:hover{border-color:var(--border2);background:var(--bg4)}
+.kanban-task-title{font-size:13px;font-weight:600;margin-bottom:8px;line-height:1.3;color:var(--text)}
+.kanban-task-title.done{text-decoration:line-through;color:var(--text3)}
+
+/* EMPTY */
+.empty-state{text-align:center;padding:3rem 1rem;color:var(--text3)}
+.empty-icon{font-size:40px;margin-bottom:1rem;opacity:.4}
+.empty-title{font-size:16px;font-weight:600;color:var(--text2);margin-bottom:6px}
+.empty-sub{font-size:13px}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;z-index:100;padding:1rem}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r3);width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
+.modal-header{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-size:16px;font-weight:700}
+.modal-body{padding:1.5rem;display:flex;flex-direction:column;gap:1rem}
+.modal-footer{padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.select-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;transition:border-color .2s}
+.select-input:focus{border-color:var(--accent)}
+.textarea-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;resize:vertical;min-height:80px;transition:border-color .2s;line-height:1.5}
+.textarea-input:focus{border-color:var(--accent)}
+.btn-cancel{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:9px 18px;color:var(--text2);font-family:var(--font);font-size:13px;cursor:pointer;font-weight:500;transition:all .18s}
+.btn-cancel:hover{color:var(--text);border-color:var(--border2)}
+.btn-save{background:var(--accent);color:#fff;border:none;border-radius:var(--r);padding:9px 20px;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-save:hover{background:var(--accent2)}
+
+/* TOAST */
+.toast-container{position:fixed;bottom:1.5rem;right:1.5rem;display:flex;flex-direction:column;gap:8px;z-index:200}
+.toast{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:10px 16px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px;animation:toastIn .3s ease;box-shadow:0 8px 32px rgba(0,0,0,0.5)}
+.toast.success{border-color:rgba(62,207,142,.3);color:var(--green)}
+.toast.info{border-color:rgba(77,184,255,.3);color:var(--blue)}
+.toast.warning{border-color:rgba(245,166,35,.3);color:var(--amber)}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .stats-row{grid-template-columns:1fr 1fr}
+  .sidebar{display:none}
+  .kanban-board{grid-template-columns:1fr}
+  .row2{grid-template-columns:1fr}
+  .topbar{padding:0 1rem}
+  .main{padding:1rem}
+  .user-name{display:none}
+  .search-input{width:140px}
+}
+@media(max-width:480px){
+  .stat-value{font-size:22px}
+  .btn-add span{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-bg"></div>
+  <div class="auth-logo">
+    <div class="auth-logo-icon">
+      <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+    </div>
+    <span class="auth-logo-text">TaskFlow</span>
+  </div>
+
+  <div class="auth-card">
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchTab('login')">Sign In</button>
+      <button class="auth-tab" onclick="switchTab('register')">Register</button>
+    </div>
+    <div id="auth-error" class="auth-error"></div>
+
+    <div id="login-form">
+      <div class="field-group">
+        <label class="field-label">Email</label>
+        <input class="field-input" type="email" id="login-email" placeholder="you@example.com" value="alex@taskflow.io"/>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Password</label>
+        <input class="field-input" type="password" id="login-pass" placeholder="••••••••" value="password123"/>
+      </div>
+      <button class="btn-primary" onclick="doLogin()">Sign In</button>
+      <div class="auth-divider" style="margin-top:1.25rem">or try a demo account</div>
+      <div class="demo-users">
+        <div class="demo-user" onclick="quickLogin('alex@taskflow.io')">
+          <div class="demo-user-name">Alex Chen</div><div class="demo-user-role">Admin</div>
+        </div>
+        <div class="demo-user" onclick="quickLogin('sam@taskflow.io')">
+          <div class="demo-user-name">Sam Rivera</div><div class="demo-user-role">Member</div>
+        </div>
+        <div class="demo-user" onclick="quickLogin('jordan@taskflow.io')">
+          <div class="demo-user-name">Jordan Kim</div><div class="demo-user-role">Viewer</div>
+        </div>
+        <div class="demo-user" onclick="quickLogin('casey@taskflow.io')">
+          <div class="demo-user-name">Casey Park</div><div class="demo-user-role">Member</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="register-form" style="display:none">
+      <div class="row2">
+        <div class="field-group"><label class="field-label">First Name</label><input class="field-input" id="reg-fname" placeholder="First"/></div>
+        <div class="field-group"><label class="field-label">Last Name</label><input class="field-input" id="reg-lname" placeholder="Last"/></div>
+      </div>
+      <div class="field-group"><label class="field-label">Email</label><input class="field-input" type="email" id="reg-email" placeholder="you@example.com"/></div>
+      <div class="field-group"><label class="field-label">Password</label><input class="field-input" type="password" id="reg-pass" placeholder="8+ characters"/></div>
+      <button class="btn-primary" onclick="doRegister()">Create Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP SCREEN -->
+<div id="app-screen">
+  <div class="topbar">
+    <div class="topbar-logo">
+      <div class="topbar-logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      </div>
+      <span class="topbar-logo-text">TaskFlow</span>
+    </div>
+    <div class="live-dot"></div>
+    <span class="live-label">LIVE</span>
+    <div class="topbar-user">
+      <div class="user-avatar" id="topbar-avatar"></div>
+      <span class="user-name" id="topbar-name"></span>
+    </div>
+    <button class="topbar-btn" onclick="doLogout()">Sign Out</button>
+  </div>
+
+  <div class="app-body">
+    <div class="sidebar">
+      <div class="sidebar-section">Views</div>
+      <button class="sidebar-item active" onclick="setFilter('all',this)">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+        All Tasks <span class="sidebar-badge" id="badge-all">0</span>
+      </button>
+      <button class="sidebar-item" onclick="setFilter('todo',this)">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>
+        To Do <span class="sidebar-badge" id="badge-todo">0</span>
+      </button>
+      <button class="sidebar-item" onclick="setFilter('inprogress',this)">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></svg>
+        In Progress <span class="sidebar-badge" id="badge-inprogress">0</span>
+      </button>
+      <button class="sidebar-item" onclick="setFilter('done',this)">
+        <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+        Completed <span class="sidebar-badge" id="badge-done">0</span>
+      </button>
+      <div class="sidebar-section">Priority</div>
+      <button class="sidebar-item" onclick="setFilter('high',this)">
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
+        High Priority <span class="sidebar-badge" id="badge-high">0</span>
+      </button>
+      <button class="sidebar-item" onclick="setFilter('medium',this)">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/></svg>
+        Medium <span class="sidebar-badge" id="badge-medium">0</span>
+      </button>
+      <button class="sidebar-item" onclick="setFilter('low',this)">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/></svg>
+        Low <span class="sidebar-badge" id="badge-low">0</span>
+      </button>
+      <div class="sidebar-section">Team</div>
+      <button class="sidebar-item" onclick="setFilter('mine',this)">
+        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Assigned to me <span class="sidebar-badge" id="badge-mine">0</span>
+      </button>
+    </div>
+
+    <div class="main">
+      <div class="stats-row">
+        <div class="stat-card accent">
+          <div class="stat-label">Total Tasks</div>
+          <div class="stat-value" id="stat-total">0</div>
+          <div class="stat-sub">across all projects</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Completed</div>
+          <div class="stat-value" id="stat-done">0</div>
+          <div class="progress-bar"><div class="progress-fill" id="stat-progress" style="width:0%"></div></div>
+        </div>
+        <div class="stat-card amber">
+          <div class="stat-label">In Progress</div>
+          <div class="stat-value" id="stat-inprogress">0</div>
+          <div class="stat-sub">active right now</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-label">High Priority</div>
+          <div class="stat-value" id="stat-high">0</div>
+          <div class="stat-sub">need attention</div>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <div class="search-wrap">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input class="search-input" type="text" id="search-input" placeholder="Search tasks…" oninput="renderTasks()"/>
+          </div>
+          <button class="filter-btn" id="filter-high" onclick="togglePriority('high')">High</button>
+          <button class="filter-btn" id="filter-medium" onclick="togglePriority('medium')">Medium</button>
+        </div>
+        <div class="view-toggle">
+          <button class="view-btn active" id="view-list" onclick="setView('list')" title="List view">
+            <svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+          </button>
+          <button class="view-btn" id="view-kanban" onclick="setView('kanban')" title="Kanban view">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="13" rx="1"/><rect x="17" y="3" width="5" height="8" rx="1"/></svg>
+          </button>
+        </div>
+        <button class="btn-add" onclick="openModal()">
+          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          <span>New Task</span>
+        </button>
+      </div>
+
+      <div id="list-view"><div class="task-list" id="task-list"></div></div>
+      <div id="kanban-view" style="display:none"><div class="kanban-board" id="kanban-board"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal" style="display:none" onclick="overlayClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">New Task</span>
+      <button class="icon-btn" onclick="closeModal()">
+        <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="field-group" style="margin:0">
+        <label class="field-label">Title *</label>
+        <input class="field-input" id="task-title" placeholder="What needs to be done?"/>
+      </div>
+      <div class="field-group" style="margin:0">
+        <label class="field-label">Description</label>
+        <textarea class="textarea-input" id="task-desc" placeholder="Add details, notes, or context…"></textarea>
+      </div>
+      <div class="row2">
+        <div class="field-group" style="margin:0">
+          <label class="field-label">Status</label>
+          <select class="select-input" id="task-status">
+            <option value="todo">To Do</option>
+            <option value="inprogress">In Progress</option>
+            <option value="done">Done</option>
+          </select>
+        </div>
+        <div class="field-group" style="margin:0">
+          <label class="field-label">Priority</label>
+          <select class="select-input" id="task-priority">
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field-group" style="margin:0">
+          <label class="field-label">Due Date</label>
+          <input class="field-input" type="date" id="task-due"/>
+        </div>
+        <div class="field-group" style="margin:0">
+          <label class="field-label">Assignee</label>
+          <select class="select-input" id="task-assignee">
+            <option value="Alex Chen">Alex Chen</option>
+            <option value="Sam Rivera">Sam Rivera</option>
+            <option value="Jordan Kim">Jordan Kim</option>
+            <option value="Casey Park">Casey Park</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-group" style="margin:0">
+        <label class="field-label">Tag</label>
+        <select class="select-input" id="task-tag">
+          <option value="">No tag</option>
+          <option value="frontend">Frontend</option>
+          <option value="backend">Backend</option>
+          <option value="design">Design</option>
+          <option value="research">Research</option>
+          <option value="bug">Bug</option>
+          <option value="feature">Feature</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveTask()">Save Task</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+/* DATA */
+const USERS=[
+  {email:'alex@taskflow.io',  name:'Alex Chen',  role:'Admin', pass:'password123'},
+  {email:'sam@taskflow.io',   name:'Sam Rivera', role:'Member',pass:'password123'},
+  {email:'jordan@taskflow.io',name:'Jordan Kim', role:'Viewer',pass:'password123'},
+  {email:'casey@taskflow.io', name:'Casey Park', role:'Member',pass:'password123'},
+];
+const SAMPLE=[
+  {id:1,title:'Design system tokens audit',desc:'Review all color, spacing and type tokens across components.',status:'done',priority:'high',due:'2025-04-10',assignee:'Alex Chen',tag:'design',created:Date.now()-864e5*5},
+  {id:2,title:'Auth JWT refresh flow',desc:'Implement silent refresh for access tokens with 15 min expiry.',status:'inprogress',priority:'high',due:'2025-04-15',assignee:'Sam Rivera',tag:'backend',created:Date.now()-864e5*3},
+  {id:3,title:'Mobile navigation refactor',desc:'Replace bottom tab bar with gesture-based drawer on small screens.',status:'todo',priority:'medium',due:'2025-04-20',assignee:'Jordan Kim',tag:'frontend',created:Date.now()-864e5*2},
+  {id:4,title:'Write API documentation',desc:'Document all v2 endpoints with request/response examples using OpenAPI 3.1.',status:'inprogress',priority:'medium',due:'2025-04-18',assignee:'Casey Park',tag:'backend',created:Date.now()-864e5},
+  {id:5,title:'User onboarding research',desc:'Conduct 5 usability interviews and synthesize findings into a report.',status:'todo',priority:'low',due:'2025-04-25',assignee:'Alex Chen',tag:'research',created:Date.now()-864e5*.5},
+  {id:6,title:'Fix broken image uploads',desc:'S3 pre-signed URL expiry causing upload failures after 15 minutes.',status:'todo',priority:'high',due:'2025-04-12',assignee:'Sam Rivera',tag:'bug',created:Date.now()-864e5*.2},
+  {id:7,title:'Dark mode color palette',desc:'Finalize semantic tokens for dark theme across all UI surfaces.',status:'done',priority:'medium',due:'2025-04-08',assignee:'Jordan Kim',tag:'design',created:Date.now()-864e5*6},
+  {id:8,title:'Realtime notifications',desc:'WebSocket integration for task updates and @mentions.',status:'todo',priority:'medium',due:'2025-04-28',assignee:'Casey Park',tag:'feature',created:Date.now()-864e5*.1},
+];
+
+/* STATE */
+let currentUser=null, editingId=null, currentFilter='all', priorityFilters=[], currentView='list', realtimeTimer=null, rtIdx=0;
+let tasks=JSON.parse(localStorage.getItem('tf_tasks')||'null')||SAMPLE.map(t=>({...t}));
+let nextId=Math.max(...tasks.map(t=>t.id))+1;
+function saveTasks(){localStorage.setItem('tf_tasks',JSON.stringify(tasks));}
+
+/* HELPERS */
+function initials(n){return n.split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2);}
+function fmtDate(d){if(!d)return'';return new Date(d+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});}
+function isOverdue(d){return d&&new Date(d+'T00:00:00')<new Date();}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+/* AUTH */
+function switchTab(tab){
+  document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',i===(tab==='login'?0:1)));
+  document.getElementById('login-form').style.display=tab==='login'?'block':'none';
+  document.getElementById('register-form').style.display=tab==='register'?'block':'none';
+  document.getElementById('auth-error').style.display='none';
+}
+function showError(m){const e=document.getElementById('auth-error');e.textContent=m;e.style.display='block';}
+function quickLogin(email){document.getElementById('login-email').value=email;document.getElementById('login-pass').value='password123';doLogin();}
+function doLogin(){
+  const email=document.getElementById('login-email').value.trim();
+  const pass=document.getElementById('login-pass').value;
+  const user=USERS.find(u=>u.email===email);
+  if(!user){showError('No account found with that email.');return;}
+  if(user.pass!==pass){showError('Incorrect password.');return;}
+  currentUser=user; enterApp();
+}
+function doRegister(){
+  const fn=document.getElementById('reg-fname').value.trim();
+  const ln=document.getElementById('reg-lname').value.trim();
+  const email=document.getElementById('reg-email').value.trim();
+  const pass=document.getElementById('reg-pass').value;
+  if(!fn||!ln){showError('Please enter your full name.');return;}
+  if(!email.includes('@')){showError('Please enter a valid email.');return;}
+  if(pass.length<8){showError('Password must be at least 8 characters.');return;}
+  currentUser={email,name:`${fn} ${ln}`,role:'Member',pass};
+  USERS.push(currentUser); enterApp();
+}
+function enterApp(){
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app-screen').style.display='flex';
+  document.getElementById('topbar-avatar').textContent=initials(currentUser.name);
+  document.getElementById('topbar-name').textContent=currentUser.name;
+  renderTasks(); startRealtimeSim();
+  toast(`Welcome back, ${currentUser.name.split(' ')[0]}!`,'success');
+}
+function doLogout(){
+  currentUser=null; clearInterval(realtimeTimer);
+  document.getElementById('app-screen').style.display='none';
+  document.getElementById('auth-screen').style.display='flex';
+  toast('Signed out successfully','info');
+}
+
+/* FILTERS & VIEW */
+function setFilter(f,el){
+  currentFilter=f;
+  document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active'));
+  if(el)el.classList.add('active');
+  renderTasks();
+}
+function togglePriority(p){
+  const idx=priorityFilters.indexOf(p);
+  if(idx>-1)priorityFilters.splice(idx,1);else priorityFilters.push(p);
+  document.getElementById('filter-'+p).classList.toggle('active',priorityFilters.includes(p));
+  renderTasks();
+}
+function setView(v){
+  currentView=v;
+  document.getElementById('view-list').classList.toggle('active',v==='list');
+  document.getElementById('view-kanban').classList.toggle('active',v==='kanban');
+  document.getElementById('list-view').style.display=v==='list'?'block':'none';
+  document.getElementById('kanban-view').style.display=v==='kanban'?'block':'none';
+  renderTasks();
+}
+function getFiltered(){
+  const q=(document.getElementById('search-input')?.value||'').toLowerCase();
+  return tasks.filter(t=>{
+    if(q&&!t.title.toLowerCase().includes(q)&&!(t.desc||'').toLowerCase().includes(q))return false;
+    if(priorityFilters.length&&!priorityFilters.includes(t.priority))return false;
+    if(currentFilter==='all')return true;
+    if(currentFilter==='mine')return t.assignee===currentUser?.name;
+    if(['todo','inprogress','done'].includes(currentFilter))return t.status===currentFilter;
+    if(['high','medium','low'].includes(currentFilter))return t.priority===currentFilter;
+    return true;
+  });
+}
+
+/* STATS */
+function updateStats(){
+  const total=tasks.length,done=tasks.filter(t=>t.status==='done').length;
+  const inp=tasks.filter(t=>t.status==='inprogress').length,high=tasks.filter(t=>t.priority==='high').length;
+  document.getElementById('stat-total').textContent=total;
+  document.getElementById('stat-done').textContent=done;
+  document.getElementById('stat-inprogress').textContent=inp;
+  document.getElementById('stat-high').textContent=high;
+  document.getElementById('stat-progress').style.width=(total?Math.round(done/total*100):0)+'%';
+  document.getElementById('badge-all').textContent=total;
+  document.getElementById('badge-todo').textContent=tasks.filter(t=>t.status==='todo').length;
+  document.getElementById('badge-inprogress').textContent=inp;
+  document.getElementById('badge-done').textContent=done;
+  document.getElementById('badge-high').textContent=high;
+  document.getElementById('badge-medium').textContent=tasks.filter(t=>t.priority==='medium').length;
+  document.getElementById('badge-low').textContent=tasks.filter(t=>t.priority==='low').length;
+  document.getElementById('badge-mine').textContent=currentUser?tasks.filter(t=>t.assignee===currentUser.name).length:0;
+}
+
+/* RENDER */
+function renderTasks(){updateStats();const f=getFiltered();if(currentView==='list')renderList(f);else renderKanban(f);}
+function renderList(filtered){
+  const el=document.getElementById('task-list');
+  if(!filtered.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No tasks found</div><div class="empty-sub">Adjust your filters or create a new task</div></div>`;return;}
+  const sorted=[...filtered].sort((a,b)=>(a.status==='done')-(b.status==='done')||{high:0,medium:1,low:2}[a.priority]-{high:0,medium:1,low:2}[b.priority]);
+  el.innerHTML=sorted.map(t=>`<div class="task-card">
+    <button class="task-check${t.status==='done'?' done':''}" onclick="toggleDone(${t.id})"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></button>
+    <div class="task-body">
+      <div class="task-title-row"><span class="task-title${t.status==='done'?' done':''}">${esc(t.title)}</span>${t.tag?`<span class="badge badge-tag">${t.tag}</span>`:''}</div>
+      ${t.desc?`<div class="task-desc">${esc(t.desc)}</div>`:''}
+      <div class="task-meta">
+        <span class="badge badge-priority-${t.priority}">${t.priority}</span>
+        <span class="badge badge-status-${t.status}">${t.status==='inprogress'?'in progress':t.status}</span>
+        ${t.due?`<span class="task-date" style="${isOverdue(t.due)&&t.status!=='done'?'color:var(--red)':''}"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>${fmtDate(t.due)}${isOverdue(t.due)&&t.status!=='done'?' · overdue':''}</span>`:''}
+        <span class="task-date"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>${esc(t.assignee)}</span>
+      </div>
+    </div>
+    <div class="task-actions">
+      <button class="icon-btn" onclick="openModal(${t.id})" title="Edit"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+      <button class="icon-btn danger" onclick="deleteTask(${t.id})" title="Delete"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>
+    </div>
+  </div>`).join('');
+}
+function renderKanban(filtered){
+  document.getElementById('kanban-board').innerHTML=Object.entries({todo:'To Do',inprogress:'In Progress',done:'Done'}).map(([status,label])=>{
+    const col=filtered.filter(t=>t.status===status);
+    return`<div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">${label}</span><span class="kanban-col-count">${col.length}</span></div>
+    ${col.length?col.map(t=>`<div class="kanban-task" onclick="openModal(${t.id})"><div class="kanban-task-title${t.status==='done'?' done':''}">${esc(t.title)}</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><span class="badge badge-priority-${t.priority}">${t.priority}</span>${t.tag?`<span class="badge badge-tag">${t.tag}</span>`:''}</div>${t.due?`<div class="task-date" style="margin-top:8px">${fmtDate(t.due)}</div>`:''}</div>`).join(''):`<div style="font-size:12px;color:var(--text3);text-align:center;padding:1.5rem">No tasks</div>`}
+    </div>`;
+  }).join('');
+}
+
+/* TASK ACTIONS */
+function toggleDone(id){const t=tasks.find(t=>t.id===id);if(!t)return;t.status=t.status==='done'?'todo':'done';saveTasks();renderTasks();toast(t.status==='done'?'Task completed!':'Task reopened','success');}
+function deleteTask(id){if(!confirm('Delete this task?'))return;tasks=tasks.filter(t=>t.id!==id);saveTasks();renderTasks();toast('Task deleted','info');}
+
+/* MODAL */
+function openModal(id){
+  editingId=id||null;const t=id?tasks.find(t=>t.id===id):null;
+  document.getElementById('modal-title').textContent=t?'Edit Task':'New Task';
+  document.getElementById('task-title').value=t?.title||'';
+  document.getElementById('task-desc').value=t?.desc||'';
+  document.getElementById('task-status').value=t?.status||'todo';
+  document.getElementById('task-priority').value=t?.priority||'medium';
+  document.getElementById('task-due').value=t?.due||'';
+  document.getElementById('task-assignee').value=t?.assignee||currentUser?.name||'Alex Chen';
+  document.getElementById('task-tag').value=t?.tag||'';
+  document.getElementById('modal').style.display='flex';
+  setTimeout(()=>document.getElementById('task-title').focus(),50);
+}
+function closeModal(){document.getElementById('modal').style.display='none';}
+function overlayClick(e){if(e.target===document.getElementById('modal'))closeModal();}
+function saveTask(){
+  const title=document.getElementById('task-title').value.trim();
+  if(!title){toast('Title is required','warning');return;}
+  const data={title,desc:document.getElementById('task-desc').value.trim(),status:document.getElementById('task-status').value,priority:document.getElementById('task-priority').value,due:document.getElementById('task-due').value,assignee:document.getElementById('task-assignee').value,tag:document.getElementById('task-tag').value};
+  if(editingId){Object.assign(tasks.find(t=>t.id===editingId),data);toast('Task updated','success');}
+  else{tasks.unshift({id:nextId++,created:Date.now(),...data});toast('Task created!','success');}
+  saveTasks();closeModal();renderTasks();
+}
+
+/* TOAST */
+function toast(msg,type='info'){
+  const c=document.getElementById('toast-container');
+  const el=document.createElement('div');el.className=`toast ${type}`;el.textContent=msg;c.appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity .4s';},2500);
+  setTimeout(()=>el.remove(),3000);
+}
+
+/* REALTIME SIM */
+const RT=[
+  ()=>toast('Sam Rivera completed "Auth JWT refresh flow"','success'),
+  ()=>toast('Jordan Kim added a new task','info'),
+  ()=>toast('Casey Park updated task priority','info'),
+  ()=>toast('New comment from Alex Chen','info'),
+  ()=>{const t=tasks.find(t=>t.status==='todo');if(t){t.status='inprogress';saveTasks();renderTasks();toast(`"${t.title.slice(0,28)}…" moved to In Progress`,'info');}},
+  ()=>toast('Alex Chen marked a task as done','success'),
+];
+function startRealtimeSim(){realtimeTimer=setInterval(()=>{RT[rtIdx%RT.length]();rtIdx++;},9000);}
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();if((e.ctrlKey||e.metaKey)&&e.key==='k'){e.preventDefault();openModal();}});
+</script>
+</body>
+</html>
